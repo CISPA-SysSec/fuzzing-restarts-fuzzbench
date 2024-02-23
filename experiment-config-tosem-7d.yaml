@@ -1,0 +1,30 @@
+# The number of trials of a fuzzer-benchmark pair.
+trials: 10
+
+# The amount of time in seconds that each trial is run for.
+# 1 day = 24 * 60 * 60 = 86400
+
+#7d
+max_total_time: 604800
+#max_total_time: 86400
+
+snapshot_period: 900
+# The location of the docker registry.
+# FIXME: Support custom docker registry.
+# See https://github.com/google/fuzzbench/issues/777
+docker_registry: gcr.io/fuzzbench
+
+# The local experiment folder that will store most of the experiment data.
+# Please use an absolute path.
+experiment_filestore: results/tosem/experiment-data
+
+# The local report folder where HTML reports and summary data will be stored.
+# Please use an absolute path.
+report_filestore: results/tosem/report-data
+
+# Flag that indicates this is a local experiment.
+local_experiment: true
+
+sileo_allow_overwrite_existing_experiment: true
+sileo_only_keep_last_corpus: false
+private: true
