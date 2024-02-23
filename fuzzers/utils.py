@@ -58,6 +58,7 @@ FUZZING_CFLAGS = ['-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION']
 
 OSS_FUZZ_LIB_FUZZING_ENGINE_PATH = '/usr/lib/libFuzzingEngine.a'
 BENCHMARK_CONFIG_YAML_PATH = '/benchmark.yaml'
+FUZZER_CODE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 def build_benchmark(env=None):
@@ -240,3 +241,37 @@ def create_seed_file_for_empty_corpus(input_corpus):
     default_seed_file = os.path.join(input_corpus, 'default_seed')
     with open(default_seed_file, 'w', encoding='utf-8') as file_handle:
         file_handle.write('hi')
+
+# same to get_config_value, but I copied it directly
+def get_benchmark_config4sileo(benchmark_dir):
+    """LALALA: fuzzbench get it from benchmark dir, however, we cannot gurantee there are those codes. """
+    benchmark_fpath = os.path.join(benchmark_dir, "benchmark.yaml")
+    config = dict()
+    if os.path.exists(benchmark_fpath):
+        with open(benchmark_fpath, encoding="utf-8") as fin:
+            config = yaml.load(fin, yaml.SafeLoader)
+    return config
+    
+
+def get_afl_preload(benchmark_dir):
+    """LALALA, Returns the instrumented objects, e.g. xx.so"""
+    config = get_benchmark_config4sileo(benchmark_dir)
+    return [os.path.normpath(os.path.join(benchmark_dir, s.strip())) if not os.path.isabs(s) else s.strip() for s in config.get('AFL_PRELOAD', "").split(",") if s.strip()]
+
+
+def get_timeout(benchmark_dir):
+    """LALALA, timeout for libfuzzer target when profiling"""
+    config = get_benchmark_config4sileo(benchmark_dir)
+    return int(config.get("timeout", "-1"))
+
+
+def get_need_continuous_mode(benchmark_dir):
+    """LALALA, needed for target with crash, or the llvm profiling will be interrupted by timeout and crashes"""
+    config = get_benchmark_config4sileo(benchmark_dir)
+    return config.get("need_profile_continuous_mode", False)
+
+
+def get_additional_binary_args(benchmark_dir):
+    """LALALA,  mainly used for benchmark_make_only, must specified in fuzzer.fuzz()"""
+    config = get_benchmark_config4sileo(benchmark_dir)
+    return config.get("additional_binary_args", None)

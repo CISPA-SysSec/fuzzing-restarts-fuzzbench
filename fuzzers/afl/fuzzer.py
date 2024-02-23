@@ -48,6 +48,7 @@ def get_stats(output_corpus, fuzzer_log):  # pylint: disable=unused-argument
     """Gets fuzzer stats for AFL."""
     # Get a dictionary containing the stats AFL reports.
     stats_file = os.path.join(output_corpus, 'fuzzer_stats')
+    print("trying to find stats_file", stats_file)
     if not os.path.exists(stats_file):
         print('Can\'t find fuzzer_stats')
         return '{}'
@@ -97,7 +98,8 @@ def run_afl_fuzz(input_corpus,
                  output_corpus,
                  target_binary,
                  additional_flags=None,
-                 hide_output=False):
+                 hide_output=False,
+                 additional_binary_args=None):
     """Run afl-fuzz."""
     # Spawn the afl fuzzing process.
     print('[run_afl_fuzz] Running target with afl-fuzz')
@@ -129,6 +131,9 @@ def run_afl_fuzz(input_corpus,
         # performs.
         '2147483647'
     ]
+    if additional_binary_args is not None:
+        assert isinstance(additional_binary_args, list)
+        command = command[:-1] + additional_binary_args
     print('[run_afl_fuzz] Running command: ' + ' '.join(command))
     output_stream = subprocess.DEVNULL if hide_output else None
     subprocess.check_call(command, stdout=output_stream, stderr=output_stream)

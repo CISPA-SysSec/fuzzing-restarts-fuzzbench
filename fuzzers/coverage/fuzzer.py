@@ -23,6 +23,15 @@ def build():
     cflags = [
         '-fprofile-instr-generate', '-fcoverage-mapping', '-gline-tables-only'
     ]
+    #LALALA
+    ldflags = []
+    need_llvm_profile_continuous_mode = utils.get_need_continuous_mode(os.environ["OUT"])
+    if need_llvm_profile_continuous_mode:
+        cflags += ["-mllvm", "-runtime-counter-relocation"]
+        ldflags += ['-fprofile-instr-generate', '-fcoverage-mapping', "-mllvm", "-runtime-counter-relocation"]
+    if len(ldflags) > 0:
+        utils.append_flags('LDFLAGS', ldflags)
+
     utils.append_flags('CFLAGS', cflags)
     utils.append_flags('CXXFLAGS', cflags)
 

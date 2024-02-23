@@ -74,7 +74,7 @@ def build():  # pylint: disable=too-many-branches,too-many-statements
         else:
             aflplusplus_fuzzer.build('lto', 'cmplog')
 
-    for copy_file in glob.glob('/afl/libc*'):
+    for copy_file in glob.glob('/afl/lib*'):
         shutil.copy(copy_file, os.environ['OUT'])
 
 

@@ -1,0 +1,4 @@
+files_regex_included_for_cov: .*/queue/|corpus/[^/]*$
+files_regex_excluded_for_cov: null
+files_regex_included_for_crashes: .*/crashes/[^/]*$|.*/hangs/[^/]*$
+files_regex_excluded_for_crashes: null
