@@ -1,0 +1,7 @@
+fuzz_target: fuzzer_pdftotext
+project: pdfseperate_fuzzer_pdftotext
+cov_objects: fuzzer_pdftotext,libpopplerfuzzer.so
+AFL_PRELOAD: libpopplerfuzzer.so
+need_profile_continuous_mode: True
+job_number_of_libfuzzer: 3
+need_profile_output: True

@@ -1,0 +1,4 @@
+commit: 7e664533834b558a859b0f8eb1f2c2caf676c12a
+commit_date: 2023-04-20 23:48:45+00:00
+fuzz_target: fuzz_readelf
+project: binutils

@@ -14,16 +14,9 @@
 #
 ################################################################################
 
-FROM gcr.io/oss-fuzz-base/base-builder@sha256:87ca1e9e19235e731fac8de8d1892ebe8d55caf18e7aa131346fc582a2034fdd
-MAINTAINER twsmith@mozilla.com
-
-RUN dpkg --add-architecture i386 && \
-    apt-get update && \
-    apt-get install -y \
-        libstdc++-9-dev libstdc++-9-dev:i386 nasm subversion
-
-RUN git clone \
-        https://github.com/cisco/openh264.git
-
+FROM gcr.io/oss-fuzz-base/base-builder
+RUN apt-get update && \
+    apt-get install -y libstdc++-9-dev libstdc++-9-dev:i386 nasm subversion
+RUN git clone --depth 1 https://github.com/cisco/openh264.git openh264
 WORKDIR openh264
 COPY build.sh decoder_fuzzer.cpp $SRC/

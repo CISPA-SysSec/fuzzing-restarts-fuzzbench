@@ -1,4 +1,4 @@
-# Copyright 2019 Google Inc.
+# Copyright 2017 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,10 +18,13 @@ FROM gcr.io/oss-fuzz-base/base-builder@sha256:87ca1e9e19235e731fac8de8d1892ebe8d
 
 RUN apt-get update && \
     apt-get install -y \
-        autoconf automake libtool bison re2c pkg-config libdbus-1-dev
+        cmake \
+        ninja-build \
+        g++ \
+        libz-dev
 
 RUN git clone \
-        https://github.com/php/php-src.git
+    https://github.com/google/bloaty.git
 
-WORKDIR php-src
-COPY build.sh *.options $SRC/
+WORKDIR bloaty
+COPY build.sh $SRC/

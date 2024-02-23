@@ -14,14 +14,11 @@
 #
 ################################################################################
 
-FROM gcr.io/oss-fuzz-base/base-builder@sha256:87ca1e9e19235e731fac8de8d1892ebe8d55caf18e7aa131346fc582a2034fdd
-
-RUN apt-get update && \
-    apt-get install -y \
-        autoconf automake libtool bison re2c pkg-config libdbus-1-dev
-
-RUN git clone \
-        https://github.com/php/php-src.git
-
-WORKDIR php-src
-COPY build.sh *.options $SRC/
+FROM gcr.io/oss-fuzz-base/base-builder
+RUN apt-get update && apt-get install -y make texinfo libgmp-dev libmpfr-dev
+RUN apt-get install -y flex bison
+RUN git clone --depth=1 https://github.com/DavidKorczynski/binary-samples binary-samples
+RUN git clone --recursive --depth 1 git://sourceware.org/git/binutils-gdb.git binutils-gdb
+WORKDIR $SRC
+COPY build.sh $SRC/
+COPY fuzz_*.c $SRC/

@@ -1,0 +1,263 @@
+//========================================================================
+//
+// pdftotext.cc
+//
+// Copyright 1997-2003 Glyph & Cog, LLC
+//
+// Modified for Debian by Hamish Moffatt, 22 May 2002.
+//
+//========================================================================
+
+//========================================================================
+//
+// Modified under the Poppler project - http://poppler.freedesktop.org
+//
+// All changes made under the Poppler project to this file are licensed
+// under GPL version 2 or later
+//
+// Copyright (C) 2006 Dominic Lachowicz <cinamod@hotmail.com>
+// Copyright (C) 2007-2008, 2010, 2011, 2017-2020 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2009 Jan Jockusch <jan@jockusch.de>
+// Copyright (C) 2010, 2013 Hib Eris <hib@hiberis.nl>
+// Copyright (C) 2010 Kenneth Berland <ken@hero.com>
+// Copyright (C) 2011 Tom Gleason <tom@buildadam.com>
+// Copyright (C) 2011 Steven Murdoch <Steven.Murdoch@cl.cam.ac.uk>
+// Copyright (C) 2013 Yury G. Kudryashov <urkud.urkud@gmail.com>
+// Copyright (C) 2013 Suzuki Toshiya <mpsuzuki@hiroshima-u.ac.jp>
+// Copyright (C) 2015 Jeremy Echols <jechols@uoregon.edu>
+// Copyright (C) 2017 Adrian Johnson <ajohnson@redneon.com>
+// Copyright (C) 2018 Klarälvdalens Datakonsult AB, a KDAB Group company, <info@kdab.com>. Work sponsored by the LiMux project of the city of Munich
+// Copyright (C) 2018 Adam Reichold <adam.reichold@t-online.de>
+// Copyright (C) 2018 Sanchit Anand <sanxchit@gmail.com>
+// Copyright (C) 2019 Dan Shea <dan.shea@logical-innovations.com>
+// Copyright (C) 2019 Oliver Sander <oliver.sander@tu-dresden.de>
+//
+// To see a description of the changes please see the Changelog file that
+// came with your tarball or type make ChangeLog if you are building from git
+//
+//========================================================================
+
+#include "config.h"
+#include <poppler-config.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstddef>
+#include <cstring>
+#include <string>
+#include <sstream>
+// #include <iomanip>
+// #include "parseargs.h"
+// #include "printencodings.h"
+// #include "goo/GooString.h"
+// #include "goo/gmem.h"
+// #include "GlobalParams.h"
+// #include "Object.h"
+// #include "Stream.h"
+// #include "Array.h"
+// #include "Dict.h"
+// #include "XRef.h"
+// #include "Catalog.h"
+// #include "Page.h"
+// #include "PDFDoc.h"
+// #include "PDFDocFactory.h"
+// #include "TextOutputDev.h"
+// #include "CharTypes.h"
+// #include "UnicodeMap.h"
+// #include "PDFDocEncoding.h"
+// #include "Error.h"
+// #include "Win32Console.h"
+char path_in[64];
+int fd_in;
+
+// int mymain()
+// {
+
+//     int firstPage = 1;
+//     int lastPage = 0;
+//     double resolution = 72.0;
+//     int x = 0;
+//     int y = 0;
+//     int w = 0;
+//     int h = 0;
+//     bool bbox = false;
+//     bool bboxLayout = false;
+//     bool physLayout = false;
+//     double fixedPitch = 0;
+//     bool rawOrder = false;
+//     bool discardDiag = false;
+//     bool htmlMeta = false;
+//     char textEncName[128] = "";
+//     char textEOLStr[16] = "";
+//     bool noPageBreaks = false;
+//     char ownerPassword[33] = "\001";
+//     char userPassword[33] = "\001";
+//     bool quiet = false;
+//     bool printVersion = false;
+//     bool printHelp = false;
+//     bool printEnc = false;
+//     PDFDoc *doc;
+//     GooString *fileName;
+//     GooString *textFileName;
+//     GooString *ownerPW, *userPW;
+//     TextOutputDev *textOut;
+//     FILE *f;
+//     const UnicodeMap *uMap;
+//     Object info;
+//     bool ok;
+//     int exitCode;
+//     EndOfLineKind textEOL = TextOutputDev::defaultEndOfLine();
+//     exitCode = 99;
+//     puts("textEOL");
+
+//     fileName = new GooString(path_in);
+//     if (fileName->cmp("-") == 0)
+//     {
+//         delete fileName;
+//         fileName = new GooString("fd://0");
+//     }
+//     puts("ownerPW");
+//     ownerPW = new GooString("owner");
+//     userPW = new GooString("user");
+
+//     puts(fileName->c_str());
+//     doc = PDFDocFactory().createPDFDoc(*fileName, ownerPW, userPW);
+
+//     printf("%x\n", doc);
+//     if (!doc->isOk())
+//     {
+//         printf("%d ok\n", doc->getErrorCode());
+//         exitCode = 1;
+//         goto err2;
+//     }
+//     puts("1");
+
+//     textFileName = fileName->copy();
+//     textFileName->append(htmlMeta ? ".html" : ".txt");
+
+//     puts("1");
+//     if (lastPage < 1 || lastPage > doc->getNumPages())
+//     {
+//         lastPage = doc->getNumPages();
+//     }
+//     puts("1");
+//     if (lastPage < firstPage)
+//     {
+//         error(errCommandLine, -1,
+//               "Wrong page range given: the first page ({0:d}) can not be after the last page ({1:d}).",
+//               firstPage, lastPage);
+//         goto err3;
+//     }
+//     puts("1");
+
+//     textOut = new TextOutputDev(textFileName->c_str(),
+//                                 physLayout, fixedPitch, rawOrder, htmlMeta, discardDiag);
+//     puts("1");
+//     if (textOut->isOk())
+//     {
+//         textOut->setTextEOL(textEOL);
+//         if (noPageBreaks)
+//         {
+//             textOut->setTextPageBreaks(false);
+//         }
+//         puts("2");
+//         if ((w == 0) && (h == 0) && (x == 0) && (y == 0))
+//         {
+//             doc->displayPages(textOut, firstPage, lastPage, resolution, resolution, 0,
+//                               true, false, false);
+//             puts("3");
+//         }
+//         else
+//         {
+
+//             for (int page = firstPage; page <= lastPage; ++page)
+//             {
+//                 doc->displayPageSlice(textOut, page, resolution, resolution, 0,
+//                                       true, false, false,
+//                                       x, y, w, h);
+//             }
+//             puts("3");
+//         }
+//     }
+//     else
+//     {
+//         delete textOut;
+//         exitCode = 2;
+//         goto err3;
+//     }
+
+//     delete textOut;
+
+//     exitCode = 0;
+
+//     puts("4");
+//     // clean up
+// err3:
+//     puts("delete err3;");
+//     delete textFileName;
+// err2:
+//     puts("delete err2;");
+//     delete doc;
+//     puts("delete doc;");
+//     delete fileName;
+//     puts("delete fileName;");
+// err1:
+// err0:
+
+//     return exitCode;
+// }
+// __attribute__((no_sanitize("undefined")))
+extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
+{
+    puts("LLVMFuzzerInitialize");
+    // puts("globalParams = std::make_unique<GlobalParams>();");
+    // globalParams = std::make_unique<GlobalParams>();
+    // puts("globalParams->setErrQuiet(true);");
+    // globalParams->setErrQuiet(true);
+    // poppler::set_debug_error_function(dummy_error_function, nullptr);
+}
+
+// int writeFileIntoFD(int fd, const uint8_t *data, size_t size)
+// {
+//     lseek(fd, 0, SEEK_SET);
+//     if (size > 0 && write(fd, data, size) != size)
+//     {
+//         printf("failed write, errno=%d\n", errno);
+//         close(fd);
+//         return -3;
+//     }
+//     if (ftruncate(fd, size))
+//     {
+//         printf("failed truncate, errno=%d\n", errno);
+//         close(fd);
+//         return -3;
+//     }
+//     if (size > 0)
+//         lseek(fd, 0, SEEK_SET);
+//     return 0;
+// }
+
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+{
+    puts("LLVMFuzzerTestOneInput");
+    printf("LLVMFuzzerTestOneInput, %ul\n", size);
+    if (size < 1)
+        return 0;
+    // puts("LLVMFuzzerTestOneInput");
+    // strncpy(path_in, "/tmp/fuzz.input-XXXXXX", 31);
+    // fd_in = mkstemp(path_in);
+    // if (fd_in < 0)
+    // {
+    //     printf("fd_in failed mkstemp, errno=%d\n", errno);
+    //     return -2;
+    // }
+    // printf("mkstemp %s\n", path_in);
+    // int flag = writeFileIntoFD(fd_in, data, size);
+    // puts("writeFileIntoFD");
+    // if (flag != 0)
+    // {
+    //     return flag;
+    // }
+    // puts("mymain");
+    // mymain();
+    return 0;
+}

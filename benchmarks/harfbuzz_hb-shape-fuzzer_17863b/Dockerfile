@@ -1,4 +1,4 @@
-# Copyright 2019 Google Inc.
+# Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,11 +17,9 @@
 FROM gcr.io/oss-fuzz-base/base-builder@sha256:87ca1e9e19235e731fac8de8d1892ebe8d55caf18e7aa131346fc582a2034fdd
 
 RUN apt-get update && \
-    apt-get install -y \
-        autoconf automake libtool bison re2c pkg-config libdbus-1-dev
+    apt-get install -y ragel pkg-config
 
-RUN git clone \
-        https://github.com/php/php-src.git
+RUN git clone https://github.com/harfbuzz/harfbuzz.git
 
-WORKDIR php-src
-COPY build.sh *.options $SRC/
+WORKDIR harfbuzz
+COPY build.sh $SRC/

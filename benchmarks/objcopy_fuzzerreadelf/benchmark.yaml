@@ -1,0 +1,5 @@
+fuzz_target: fuzzerreadelf
+project: objcopy_fuzzerreadelf
+need_profile_continuous_mode: True
+job_number_of_libfuzzer: 3
+need_profile_output: True

@@ -1,0 +1,4 @@
+commit: dd2dc162c5907ea6567a9f3bdd5f121c9a255847
+commit_date: 2022-07-07 11:27:39+00:00
+fuzz_target: pdf_fuzzer
+project: mupdf
