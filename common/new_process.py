@@ -78,6 +78,7 @@ def execute(  # pylint: disable=too-many-locals,too-many-branches
         output_file: Optional[int] = None,
         # Not True by default because we can't always set group on processes.
         kill_children: bool = False,
+        err_file: Optional[int] = None,
         **kwargs) -> ProcessResult:
     """Execute |command| and return the returncode and the output"""
     if write_to_stdout:
@@ -86,9 +87,14 @@ def execute(  # pylint: disable=too-many-locals,too-many-branches
         assert output_file is None
     elif not output_file:
         output_file = subprocess.PIPE
+    logs.info(f"LALALA: execute, {command[:20]}...")
+    if output_file is not None:
+        kwargs['stdout'] = output_file
+    if err_file is not None:
+        kwargs['stderr'] = err_file
+    else:
+        kwargs['stderr'] = subprocess.STDOUT
 
-    kwargs['stdout'] = output_file
-    kwargs['stderr'] = subprocess.STDOUT
     if kill_children:
         kwargs['preexec_fn'] = os.setsid
 
@@ -124,5 +130,6 @@ def execute(  # pylint: disable=too-many-locals,too-many-branches
         logs.error(log_message, command_log_str, retcode, extras=log_extras)
         raise subprocess.CalledProcessError(retcode, command)
 
+    logs.info(f"LALALA: executed, {command[:20]}..., {retcode}")
     logs.debug(log_message, command_log_str, retcode, extras=log_extras)
     return ProcessResult(retcode, output, wrapped_process.timed_out)

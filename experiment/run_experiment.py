@@ -18,6 +18,7 @@ it needs to begin an experiment."""
 import argparse
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -40,6 +41,9 @@ from common import new_process
 from common import utils
 from common import yaml_utils
 
+#LALALA
+from common import sileo_settings
+
 BENCHMARKS_DIR = os.path.join(utils.ROOT_DIR, 'benchmarks')
 FUZZERS_DIR = os.path.join(utils.ROOT_DIR, 'fuzzers')
 RESOURCES_DIR = os.path.join(utils.ROOT_DIR, 'experiment', 'resources')
@@ -47,6 +51,11 @@ FUZZER_NAME_REGEX = re.compile(r'^[a-z][a-z0-9_]+$')
 EXPERIMENT_CONFIG_REGEX = re.compile(r'^[a-z0-9-]{0,30}$')
 FILTER_SOURCE_REGEX = re.compile(r'('
                                  r'^\.git/|'
+                                 r'^\.github/|'
+                                 r'^\.allstar/|'
+                                 r'^\.vscode/|'
+                                 r'^tmp/|'
+                                 r'^data_dir/|'
                                  r'^\.pytype/|'
                                  r'^\.venv/|'
                                  r'^.*\.pyc$|'
@@ -180,6 +189,12 @@ def read_and_validate_experiment_config(config_filename: str) -> Dict:
         'merge_with_nonprivate':
             Requirement(False, bool, False, ''),
         'preemptible_runners':
+            Requirement(False, bool, False, ''),
+        'sileo_extra_data_filestore':
+            Requirement(False, str, False, '/'),
+        'sileo_allow_overwrite_existing_experiment':
+            Requirement(False, bool, False, ''),
+        'sileo_only_keep_last_corpus':
             Requirement(False, bool, False, ''),
     }
 
@@ -516,8 +531,12 @@ class LocalDispatcher(BaseDispatcher):
             '-v',
             shared_experiment_filestore_arg,
             '-v',
-            shared_report_filestore_arg,
-        ] + environment_args + [
+            shared_report_filestore_arg
+        ] 
+        if sileo_settings.EXTRA_DATA_FILESTORE() is not None:
+            command += ['-v', #LALALA
+                f"{sileo_settings.EXTRA_DATA_FILESTORE()}:{sileo_settings.EXTRA_DATA_FILESTORE()}"]
+        command += environment_args + [
             '--shm-size=2g',
             '--cap-add=SYS_PTRACE',
             '--cap-add=SYS_NICE',

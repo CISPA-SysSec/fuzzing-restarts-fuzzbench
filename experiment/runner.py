@@ -40,6 +40,9 @@ from common import retry
 from common import sanitizer
 from common import utils
 
+#LALALA
+from common import sileo_settings
+
 NUM_RETRIES = 3
 RETRY_DELAY = 3
 
@@ -256,6 +259,11 @@ class TrialRunner:  # pylint: disable=too-many-instance-attributes
         self.log_file = os.path.join(self.results_dir, 'fuzzer-log.txt')
         self.last_sync_time = None
         self.last_archive_time = -float('inf')
+        #LALALA
+        self.last_archive_cycle = -1
+        self.last_archive_start_time = -float('inf')
+        #LALALA
+
 
     def initialize_directories(self):
         """Initialize directories needed for the trial."""
@@ -341,11 +349,12 @@ class TrialRunner:  # pylint: disable=too-many-instance-attributes
         save them to a file so that they will be synced to the filestore."""
         # TODO(metzman): Make this more resilient so we don't wait forever and
         # so that breakages in stats parsing doesn't break runner.
-
+        logs.info("LALALA: record_stats")
         fuzzer_module = get_fuzzer_module(self.fuzzer)
 
         fuzzer_module_get_stats = getattr(fuzzer_module, 'get_stats', None)
-        if fuzzer_module_get_stats is None:
+        if fuzzer_module_get_stats is None:  
+            logs.info("LALALA: get_stats but fuzzer_module_get_stats is None")
             # Stats support is optional.
             return
 
@@ -375,20 +384,35 @@ class TrialRunner:  # pylint: disable=too-many-instance-attributes
             self.corpus_archives_dir,
             experiment_utils.get_corpus_archive_name(self.cycle))
 
+        #LALALA
+        # if we consecutively generate two .tar.gz with the same name(e.g: corpus-archive-0192.tar.gz and corpus-archive-0192.tar.gz)
+        # the latest .tar.gz cannot capture files inside the former one since self.last_archive_time has changed to when we finished the former corpus-archive-0192.tar.gz
+        # as a result, we lose part of data
+        if self.cycle == self.last_archive_cycle: 
+            # solution: reset the last archive time to time before this cycle
+            self.last_archive_time = self.last_archive_start_time
+        else:
+            self.last_archive_start_time = self.last_archive_time
+        #LALALA
+
         corpus_dir_name = os.path.basename(self.corpus_dir)
+        logs.info(f"self.last_archive_time {self.last_archive_time}, corpus_dir_name {corpus_dir_name}")
         with tarfile.open(archive, 'w:gz') as tar:
             new_archive_time = self.last_archive_time
             for file_path in get_corpus_elements(self.corpus_dir):
-                stat_info = os.stat(file_path)
-                last_modified_time = stat_info.st_mtime
-                if last_modified_time <= self.last_archive_time:
-                    continue  # We've saved this file already.
-                new_archive_time = max(new_archive_time, last_modified_time)
-
-                arcname = os.path.join(
-                    corpus_dir_name, os.path.relpath(file_path,
-                                                     corpus_dir_name))
                 try:
+                    stat_info = os.stat(file_path)
+                    last_modified_time = stat_info.st_mtime
+                    if not sileo_settings.ONLY_KEEP_LAST_CORPUS() and last_modified_time <= self.last_archive_time:
+                        continue  # We've saved this file already.
+                    else:
+                        pass
+
+                    new_archive_time = max(new_archive_time, last_modified_time)
+
+                    arcname = os.path.join(
+                        corpus_dir_name, os.path.relpath(file_path,
+                                                        corpus_dir_name))
                     tar.add(file_path, arcname=arcname)
                 except (FileNotFoundError, OSError):
                     # We will get these errors if files or directories are being
@@ -399,6 +423,7 @@ class TrialRunner:  # pylint: disable=too-many-instance-attributes
                 except Exception:  # pylint: disable=broad-except
                     logs.error('Unexpected exception occurred when archiving.')
         self.last_archive_time = new_archive_time
+        self.last_archive_cycle = self.cycle #LALALA
         return archive
 
     def save_corpus_archive(self, archive):
@@ -477,8 +502,8 @@ def get_corpus_elements(corpus_dir):
     for root, _, files in os.walk(corpus_dir):
         for filename in files:
             file_path = os.path.join(root, filename)
-            if _is_path_excluded(file_path):
-                continue
+            # if _is_path_excluded(file_path): #LALALA
+            #     continue
             corpus_elements.append(file_path)
     return corpus_elements
 

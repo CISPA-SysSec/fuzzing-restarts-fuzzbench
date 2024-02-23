@@ -152,3 +152,54 @@ def get_language(benchmark):
     """Returns the prorgamming language the benchmark was written in."""
     config = benchmark_config.get_config(benchmark)
     return config.get('language', 'c++')
+
+
+def get_benchmark_config4sileo(benchmark_dir):
+    """LALALA: fuzzbench get it from benchmark dir, however, we cannot gurantee there are those codes."""
+    benchmark_fpath = os.path.join(benchmark_dir, "benchmark.yaml")
+    config = dict()
+    if os.path.exists(benchmark_fpath):
+        with open(benchmark_fpath, encoding="utf-8") as fin:
+            config = yaml.load(fin, yaml.SafeLoader)
+    return config
+    
+
+def get_cov_objs(benchmark_dir):
+    """LALALA, Returns the instrumented objects, e.g. xx.so"""
+    config = get_benchmark_config4sileo(benchmark_dir)
+    return [s.strip() for s in config.get('cov_objects', "").split(",") if s.strip()]
+
+
+def get_afl_preload(benchmark_dir):
+    """LALALA, Returns the instrumented objects, e.g. xx.so"""
+    config = get_benchmark_config4sileo(benchmark_dir)
+    return [os.path.normpath(os.path.join(benchmark_dir, s.strip())) if not os.path.isabs(s) else s.strip() for s in config.get('AFL_PRELOAD', "").split(",") if s.strip()]
+
+
+def get_timeout(benchmark_dir):
+    """LALALA, timeout for libfuzzer target when profiling"""
+    config = get_benchmark_config4sileo(benchmark_dir)
+    return int(config.get("timeout", "-1"))
+
+
+def get_need_continuous_mode(benchmark_dir):
+    """LALALA, needed for target with crash, or the llvm profiling will be interrupted by timeout and crashes"""
+    config = get_benchmark_config4sileo(benchmark_dir)
+    return config.get("need_profile_continuous_mode", False)
+
+
+def get_job_number_of_libfuzzer(benchmark_dir):
+    """LALALA, split the corpus into {job_number_of_libfuzzer} shares, then run {job_number_of_libfuzzer} /libfuzzer_target -merge=1 """
+    config = get_benchmark_config4sileo(benchmark_dir)
+    return int(config.get("job_number_of_libfuzzer", "1"))
+
+
+def get_need_profile_output(benchmark_dir):
+    """LALALA,  if set to True, we direct stdout and stderr to /dev/null"""
+    config = get_benchmark_config4sileo(benchmark_dir)
+    return config.get("need_profile_output", False)
+
+def get_additional_binary_args(benchmark_dir):
+    """LALALA,  mainly used for benchmark_make_only, must specified in fuzzer.fuzz()"""
+    config = get_benchmark_config4sileo(benchmark_dir)
+    return config.get("additional_binary_args", None)

@@ -33,6 +33,7 @@ from sqlalchemy import func
 from sqlalchemy import orm
 
 from common import benchmark_config
+from common import benchmark_utils
 from common import experiment_utils
 from common import experiment_path as exp_path
 from common import filesystem
@@ -47,6 +48,11 @@ from experiment.measurer import coverage_utils
 from experiment.measurer import run_coverage
 from experiment.measurer import run_crashes
 from experiment import scheduler
+
+#LALALA
+import re
+import traceback
+from common import sileo_settings
 
 logger = logs.Logger()
 
@@ -156,12 +162,14 @@ def measure_all_trials(experiment: str, max_total_time: int, pool,
 
     experiment_folders_dir = experiment_utils.get_experiment_folders_dir()
     if not exists_in_experiment_filestore(experiment_folders_dir):
+        logger.info("LALALA: not exists_in_experiment_filestore(experiment_folders_dir)")
         return True
 
     max_cycle = _time_to_cycle(max_total_time)
     unmeasured_snapshots = get_unmeasured_snapshots(experiment, max_cycle)
 
     if not unmeasured_snapshots:
+        logger.info("LALALA: not unmeasured_snapshots")
         return False
 
     measure_trial_coverage_args = [
@@ -328,15 +336,18 @@ def get_unmeasured_snapshots(experiment: str,
     return unmeasured_first_snapshots + unmeasured_latest_snapshots
 
 
-def extract_corpus(corpus_archive: str, output_directory: str):
+def extract_corpus(corpus_archive: str, output_directory: str, files_regex_pattern_included: re.Pattern=None, files_regex_pattern_excluded: re.Pattern=None):
     """Extract a corpus from |corpus_archive| to |output_directory|."""
     pathlib.Path(output_directory).mkdir(exist_ok=True)
     with tarfile.open(corpus_archive, 'r:gz') as tar:
         for member in tar.getmembers():
-
             if not member.isfile():
                 # We don't care about directory structure.
                 # So skip if not a file.
+                continue
+            if files_regex_pattern_included is not None and files_regex_pattern_included.match(member.name) is None:
+                continue
+            if files_regex_pattern_excluded is not None and files_regex_pattern_excluded.match(member.name) is not None:
                 continue
 
             member_file_handle = tar.extractfile(member)
@@ -356,6 +367,10 @@ def extract_corpus(corpus_archive: str, output_directory: str):
 
             filesystem.write(file_path, member_contents, 'wb')
 
+def try_to_compile_a_file_regex(file_regex):
+    if file_regex is None:
+        return None
+    return re.compile(file_regex)
 
 class SnapshotMeasurer(coverage_utils.TrialCoverage):  # pylint: disable=too-many-instance-attributes
     """Class used for storing details needed to measure coverage of a particular
@@ -367,6 +382,11 @@ class SnapshotMeasurer(coverage_utils.TrialCoverage):  # pylint: disable=too-man
         super().__init__(fuzzer, benchmark, trial_num)
         self.logger = trial_logger
         self.corpus_dir = os.path.join(self.measurement_dir, 'corpus')
+        self.files_regex_pattern_included_for_cov = try_to_compile_a_file_regex(sileo_settings.get_files_regex_included_for_cov(fuzzer))
+        self.files_regex_pattern_excluded_for_cov = try_to_compile_a_file_regex(sileo_settings.get_files_regex_excluded_for_cov(fuzzer))
+        self.files_regex_pattern_included_for_crashes = try_to_compile_a_file_regex(sileo_settings.get_files_regex_included_for_crashes(fuzzer))
+        self.files_regex_pattern_excluded_for_crashes = try_to_compile_a_file_regex(sileo_settings.get_files_regex_excluded_for_crashes(fuzzer))
+        
 
         self.crashes_dir = os.path.join(self.measurement_dir, 'crashes')
         self.coverage_dir = os.path.join(self.measurement_dir, 'coverage')
@@ -374,8 +394,13 @@ class SnapshotMeasurer(coverage_utils.TrialCoverage):  # pylint: disable=too-man
                                       self.benchmark_fuzzer_trial_dir)
 
         # Store the profraw file containing coverage data for each cycle.
-        self.profraw_file_pattern = os.path.join(self.coverage_dir,
-                                                 'data-%m.profraw')
+        if benchmark_utils.get_need_continuous_mode(os.path.dirname(coverage_utils.get_coverage_binary(self.benchmark))):
+            self.profraw_file_pattern = os.path.join(self.coverage_dir,
+                                                    'data-%m%p%c.profraw') #LALALA
+        else:
+            self.profraw_file_pattern = os.path.join(self.coverage_dir,
+                                                    'data-%m%p.profraw') #LALALA
+
 
         # Store the profdata file for the current trial.
         self.profdata_file = os.path.join(self.report_dir, 'data.profdata')
@@ -390,7 +415,7 @@ class SnapshotMeasurer(coverage_utils.TrialCoverage):  # pylint: disable=too-man
     def get_profraw_files(self):
         """Return generated profraw files."""
         return [
-            f for f in glob.glob(self.profraw_file_pattern.replace('%m', '*'))
+            f for f in glob.glob(self.profraw_file_pattern.replace('%m', '*').replace("%p", "*").replace("%c", ""))
             if os.path.getsize(f)
         ]
 
@@ -401,12 +426,12 @@ class SnapshotMeasurer(coverage_utils.TrialCoverage):  # pylint: disable=too-man
             filesystem.recreate_directory(directory)
         filesystem.create_directory(self.report_dir)
 
-    def run_cov_new_units(self):
+    def run_cov_new_units(self, cycle):
         """Run the coverage binary on new units."""
         coverage_binary = coverage_utils.get_coverage_binary(self.benchmark)
         run_coverage.do_coverage_run(coverage_binary, self.corpus_dir,
                                      self.profraw_file_pattern,
-                                     self.crashes_dir)
+                                     self.crashes_dir, cycle)
 
     def generate_summary(self, cycle: int, summary_only=False):
         """Transforms the .profdata file into json form."""
@@ -482,7 +507,7 @@ class SnapshotMeasurer(coverage_utils.TrialCoverage):  # pylint: disable=too-man
             self.logger.warning('Corpus not found: %s.', corpus_archive_path)
             return False
 
-        extract_corpus(corpus_archive_path, self.corpus_dir)
+        extract_corpus(corpus_archive_path, self.corpus_dir, self.files_regex_pattern_included_for_cov, self.files_regex_pattern_excluded_for_cov)
         return True
 
     def save_crash_files(self, cycle):
@@ -533,6 +558,7 @@ class SnapshotMeasurer(coverage_utils.TrialCoverage):  # pylint: disable=too-man
         stats_filename = experiment_utils.get_stats_filename(cycle)
         stats_filestore_path = exp_path.filestore(
             os.path.join(self.trial_dir, stats_filename))
+        logs.info(f"LALALA: try to get fuzzer stats from: {stats_filestore_path}")
         try:
             return get_fuzzer_stats(stats_filestore_path)
         except (ValueError, json.decoder.JSONDecodeError):
@@ -552,6 +578,37 @@ def get_fuzzer_stats(stats_filestore_path):
     fuzzer_stats.validate_fuzzer_stats(stats_str)
     return json.loads(stats_str)
 
+def clear_former_corpus_tar_gz(corpus_dir, less_than_cycle):
+    assert sileo_settings.ONLY_KEEP_LAST_CORPUS()
+    if less_than_cycle <= 0:
+        logs.debug(f"LALALA: skip clear_former_corpus_tar_gz for cycle: {less_than_cycle}")
+        return
+    
+    cycle2fpath = dict()
+    for fpath in pathlib.Path(corpus_dir).glob("corpus-archive-*"):
+        if fpath.name.endswith(".tar.gz") and re.search('[(0-9)]+', fpath.name) is not None:
+            cycle_in_fname = int(re.search('[(0-9)]+', fpath.name).group(0))
+            assert cycle_in_fname not in cycle2fpath
+            cycle2fpath[cycle_in_fname] = fpath
+    
+    if less_than_cycle not in cycle2fpath:
+        logs.info(f"LALALA: skip clear_former_corpus_tar_gz since cycle: {less_than_cycle} is not in corpus_dir")
+        return
+
+    try:
+        with tarfile.open(cycle2fpath[less_than_cycle], "r:gz") as tarf:
+            if len(tarf.getmembers()) == 0:
+                logs.info(f"LALALA: skip clear_former_corpus_tar_gz since corpus-archive is empty: {cycle2fpath[less_than_cycle]}")
+                return
+    except Exception:
+        logs.info(f"LALALA: skip clear_former_corpus_tar_gz since unable to open: {cycle2fpath[less_than_cycle]}")
+        return
+
+    logs.info(f"LALALA: clear_former_corpus_tar_gz from {corpus_dir}")
+    for cycle_in_fname, fpath in cycle2fpath.items():
+        if cycle_in_fname < less_than_cycle:
+            logs.info(f"LALALA: removing {fpath}")
+            os.remove(fpath)
 
 def measure_trial_coverage(measure_req, max_cycle: int,
                            multiprocessing_queue: multiprocessing.Queue,
@@ -561,6 +618,14 @@ def measure_trial_coverage(measure_req, max_cycle: int,
     initialize_logs()
     logger.debug('Measuring trial: %d.', measure_req.trial_id)
     min_cycle = measure_req.cycle
+    #LALALA
+    try:
+        corpus_dir = os.path.join(experiment_utils.get_experiment_filestore_path(), 'experiment-folders',
+                                      experiment_utils.get_trial_dir(measure_req.fuzzer, measure_req.benchmark, measure_req.trial_id), 'corpus')
+        
+    except Exception:  # pylint: disable=broad-except
+        traceback.print_exc()
+    #LALALA
     # Add 1 to ensure we measure the last cycle.
     for cycle in range(min_cycle, max_cycle + 1):
         try:
@@ -570,8 +635,16 @@ def measure_trial_coverage(measure_req, max_cycle: int,
                                                  region_coverage)
             if not snapshot:
                 break
+            #LALALA
+            if snapshot.fuzzer_stats is None and snapshot.edges_covered == 0:
+                print("snapshot: ", snapshot.trial_id, snapshot.trial, snapshot.crashes, snapshot.fuzzer_stats, snapshot.edges_covered)
+                raise Exception("fuzzer_stats is None, which shouldn't be appeared inside sileo_testing!")
+            if sileo_settings.ONLY_KEEP_LAST_CORPUS():
+                clear_former_corpus_tar_gz(corpus_dir, min(cycle, max_cycle - 1))
+            #LALALA
             multiprocessing_queue.put(snapshot)
         except Exception:  # pylint: disable=broad-except
+            traceback.print_exc() # LALALA
             logger.error('Error measuring cycle.',
                          extras={
                              'fuzzer': measure_req.fuzzer,
@@ -621,7 +694,7 @@ def measure_snapshot_coverage(  # pylint: disable=too-many-locals
     os.remove(corpus_archive_dst)
 
     # Run coverage on the new corpus units.
-    snapshot_measurer.run_cov_new_units()
+    snapshot_measurer.run_cov_new_units(cycle)
 
     # Generate profdata and transform it into json form.
     snapshot_measurer.generate_coverage_information(cycle)

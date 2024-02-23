@@ -56,6 +56,7 @@ def create_instance(instance_name: str,
     if experiment_utils.is_local_experiment():
         return run_local_instance(startup_script)
 
+    print("enter gcloud? are you sure?") # LALALA
     command = [
         'gcloud',
         'compute',
@@ -131,6 +132,7 @@ def run_local_instance(startup_script: Optional[str] = None) -> bool:
     |startup_script| in the background."""
     command = ['/bin/bash', startup_script]
     # pylint: disable=consider-using-with
+    print("subprocess.popen", command) # LALALA
     subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     return True
 

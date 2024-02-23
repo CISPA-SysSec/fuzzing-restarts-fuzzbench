@@ -798,6 +798,7 @@ def create_trial_instance(  # pylint: disable=too-many-arguments
     startup_script = render_startup_script_template(instance_name, fuzzer,
                                                     benchmark, trial_id,
                                                     experiment_config, cpuset)
+    print("LALALA", startup_script)
     startup_script_path = f'/tmp/{instance_name}-start-docker.sh'
     with open(startup_script_path, 'w', encoding='utf-8') as file_handle:
         file_handle.write(startup_script)

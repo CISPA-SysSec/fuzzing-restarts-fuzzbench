@@ -16,10 +16,11 @@
 # Configure the host.
 
 # Make everything ptrace-able.
-echo 0 > /proc/sys/kernel/yama/ptrace_scope
+
+echo 0 > /proc/sys/kernel/yama/ptrace_scope || true
 
 # Do not notify external programs about core dumps.
-echo core >/proc/sys/kernel/core_pattern
+echo core >/proc/sys/kernel/core_pattern || true
 
 # Start docker.
 {% if not local_experiment %}

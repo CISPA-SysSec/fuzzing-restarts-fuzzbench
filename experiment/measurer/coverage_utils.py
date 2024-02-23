@@ -149,6 +149,8 @@ class CoverageReporter:  # pylint: disable=too-many-instance-attributes
 
     def generate_coverage_report(self):
         """Generates the coverage report and stores in bucket."""
+        if self.binary_file is None:
+            return # to support trial=0
         command = [
             'llvm-cov',
             'show',
@@ -263,13 +265,20 @@ def generate_json_summary(coverage_binary,
                           summary_only=True):
     """Generates the json summary file from |coverage_binary|
     and |profdata_file|."""
+    coverage_binary_dir = os.path.dirname(str(coverage_binary))
+    benchmark_fpath = os.path.join(coverage_binary_dir, "benchmark.yaml")
+    if os.path.exists(benchmark_fpath):
+        sileo_cov_objects = ["-object=" + os.path.join(coverage_binary_dir, s.strip()) for s in benchmark_utils.get_cov_objs(coverage_binary_dir) + [coverage_binary] if s.strip()]
+    else:
+        sileo_cov_objects = []
     command = [
         'llvm-cov',
         'export',
         '-format=text',
         '-num-threads=1',
         '-region-coverage-gt=0',
-        '-skip-expansions',
+        '-skip-expansions'] \
+         + sileo_cov_objects + [
         coverage_binary,
         f'-instr-profile={profdata_file}',
     ]
@@ -277,6 +286,13 @@ def generate_json_summary(coverage_binary,
     if summary_only:
         command.append('-summary-only')
 
+    if not os.path.exists(os.path.dirname(output_file)):
+        class DummyResult:
+            def __init__(self, retcode) -> None:
+                self.retcode = retcode
+                self.output = ""
+        return DummyResult(-1)
+    
     with open(output_file, 'w', encoding='utf-8') as dst_file:
         result = new_process.execute(command,
                                      output_file=dst_file,

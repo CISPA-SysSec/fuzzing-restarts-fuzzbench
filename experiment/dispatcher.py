@@ -36,6 +36,9 @@ from experiment import reporter
 from experiment import scheduler
 from experiment import stop_experiment
 
+# LALALA
+from common import sileo_settings
+
 LOOP_WAIT_SECONDS = 5 * 60
 
 # TODO(metzman): Convert more uses of os.path.join to exp_path.path.
@@ -59,8 +62,19 @@ def _initialize_experiment_in_db(experiment_config: dict):
     with db_utils.session_scope() as session:
         experiment_exists = session.query(models.Experiment).filter(
             models.Experiment.name == experiment_config['experiment']).first()
-    if experiment_exists:
-        raise Exception('Experiment already exists in database.')
+        if experiment_exists:
+            logs.info(f"sileo_settings.ALLOW_OVERWRITE_EXISTING_EXP: {sileo_settings.ALLOW_OVERWRITE_EXISTING_EXP()}")
+            if sileo_settings.ALLOW_OVERWRITE_EXISTING_EXP():
+                exp_name = experiment_config['experiment']
+                logs.warning("LALALA:Experiment already exists in database.")
+                trial_id2del = {trial.id for trial in session.query(models.Trial).filter(models.Trial.experiment == exp_name)}
+                session.query(models.Snapshot).filter(models.Snapshot.trial_id.in_(trial_id2del)).delete()
+                session.query(models.Crash).filter(models.Crash.trial_id.in_(trial_id2del)).delete()
+                session.query(models.Trial).filter(models.Trial.experiment == exp_name).delete()
+                session.query(models.Experiment).filter(models.Experiment.name == exp_name).delete()
+                session.commit()
+            else:
+                raise Exception('Experiment already exists in database.')
 
     db_utils.add_all([
         db_utils.get_or_create(
