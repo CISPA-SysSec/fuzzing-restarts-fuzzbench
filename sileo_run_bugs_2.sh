@@ -19,7 +19,7 @@ echo "Starting experiment"
 source .venv/bin/activate
 
 PYTHONPATH=. python3 experiment/run_experiment.py \
---experiment-config experiment-config-bug.yaml \
+--experiment-config experiment-config-tosem.yaml \
 --benchmarks $BENCHMARKS \
 --experiment-name $EXPERIMENT_NAME \
 --fuzzers $FUZZER_CONFIG \
