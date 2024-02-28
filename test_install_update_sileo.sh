@@ -10,7 +10,7 @@ make build-$FUZZER_NAME-$BENCHMARK_NAME
 
 echo "+++ Was able to successfully built fuzzer +++"
 
-git clone https://github.com/CISPA-SysSec/fuzzing-restarts
+git clone https://github.com/CISPA-SysSec/fuzzing-restarts.git
 cp -r fuzzing-restarts/sileo fuzzers/sileo_aflpp/
 
 echo "Updated Sileo"
