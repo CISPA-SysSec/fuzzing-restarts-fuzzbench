@@ -14,7 +14,7 @@ The following describes how to setup FuzzBench. Make sure you also have installe
 1. Clone this repository:
 
    ``` bash
-    git clone https://github.com/CISPA-SysSec/fuzzing-restart-fuzzbench.git && cd fuzzing-restarts-fuzzbench
+    git clone https://github.com/CISPA-SysSec/fuzzing-restarts-fuzzbench.git && cd fuzzing-restarts-fuzzbench
    ```
 
 2. Install required packages (**Note: Python in version 3.10 is required**):
