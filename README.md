@@ -38,13 +38,21 @@ The following describes how to setup FuzzBench. Make sure you also have installe
 
 ## Reproduce Paper Results
 
-If you want to reproduce our experiments from our paper, you can use our `sileo_run_*` scripts. There are different types of experiments that can be executed using this scripts. The script names indicate the respective experiments.
-Please make sure to change / add the following into the run scripts, to ensure a proper utilization of your hardware. You can have a look at `sileo_run_bugs_1.sh` where we used 40 runner CPUs and 10 measurer CPUs, on our hardware with 52 pysical cores and 52 hyperthreads (We ignored the hyperthreads and just executed as much parallel jobs as we have physical cores):
+If you want to reproduce our experiments from our paper, you can use our `sileo_run_*` scripts. These scripts using the experiment configuration files `experiment-config.yaml` and `experiment-config-7d.yaml`. In these files the runtime and also the number of trials are specified. If you have not enough computation power, you can reduce the number of trials to e.g. 5, but we highly recommend to use 10 trial or even more to get statistically significant results. There are different types of experiments that can be executed using this scripts. The script names indicate the respective experiments. Execute such a script in a `tmux` session.
+
+  ```bash
+    tmux new -s fuzzing-restarts
+    ./sileo_run_cov_all.sh
+  ```
+
+**Important**: Please make sure to change / add the following into the run scripts, to ensure a proper utilization of your hardware. You can have a look at `sileo_run_bugs_1.sh` where we used 40 runner CPUs and 10 measurer CPUs, on our hardware with 52 pysical cores and 52 hyperthreads (We ignored the hyperthreads and just executed as much parallel jobs as we have physical cores). If you dont set this, all jobs at once will be executed and no core pinning happens!
 
 ```bash
 --runners-cpus NUMBER_RUNNER_CPUS \
 --measurers-cpus NUMBER_MEASURER_CPUS \
 ```
+
+If you have assigned enough `runners-cpus` (number_of_fuzzers \* number_of_target \* number_of_trials == number_of_jobs) e.g. for `sileo_run_cov_bloaty_1.sh`: 4 fuzzers \* 1 target \* 10 trials == 40 jobs. If you assign **40** runners-cpus, the fuzzing campaing will take 24 hours and the overall runtime (including the coverage measurement) will take maybe somewhat longer, depending on the number of `measurement-cpus` you set. If you assign less `runner-cpus` than overall jobs, e.g. `--runners-cpus 20` fuzzbench will schedule the jobs and the overall runtime will be in this case 48 hours.
 
 ---
 
@@ -85,6 +93,10 @@ For the coverage experiments, there exist three different `sileo_run_*` scripts 
 - `*_3.sh`:
   - this is the fuzzer configuration for Sileo with fixed restart times + AFL++ as competitor
   - **Fuzzers**: aflplusplus, sileo_aflpp_corp_del_purge, sileo_aflpp_corpus_del_force_30, sileo_aflpp_corpus_del_force_60, sileo_aflpp_corpus_del_force_240
+- `*_cov_all.sh`:
+  - this uses also the fuzzer configuration from the paper, but all targets at once for the coverage experiment.
+- `*_bugs_all.sh`:
+  - this uses also the fuzzer configuration from the paper, but all targets at once for the bug experiment.
 
 As an example:
 
