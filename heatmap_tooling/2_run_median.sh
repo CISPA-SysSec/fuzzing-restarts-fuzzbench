@@ -1,0 +1,9 @@
+#! /bin/bash
+
+python3 gen_lcov.py median fuzzbench_data/experiment-folders/sqlite3_ossfuzz-aflplusplus_sileo_sampling fuzzbench_data/experiment-folders/sqlite3_ossfuzz-sileo_aflpp_rnd_purge_sampling fuzzbench_data/experiment-folders/sqlite3_ossfuzz-sileo_aflpp_corpus_del_purge_sampling/ &
+
+python3 gen_lcov.py median fuzzbench_data/experiment-folders/libpcap_fuzz_both-aflplusplus_sileo_sampling/ fuzzbench_data/experiment-folders/libpcap_fuzz_both-sileo_aflpp_corpus_del_purge_sampling/ fuzzbench_data/experiment-folders/libpcap_fuzz_both-sileo_aflpp_rnd_purge_sampling/ &
+
+python3 gen_lcov.py median fuzzbench_data/experiment-folders/libpng_libpng_read_fuzzer-aflplusplus_sileo_sampling/ fuzzbench_data/experiment-folders/libpng_libpng_read_fuzzer-sileo_aflpp_corpus_del_purge_sampling/ fuzzbench_data/experiment-folders/libpng_libpng_read_fuzzer-sileo_aflpp_rnd_purge_sampling/ &
+
+wait
